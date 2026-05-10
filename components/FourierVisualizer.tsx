@@ -6,6 +6,7 @@ import { FormulaPreset } from "@/lib/presets";
 type FourierVisualizerProps = {
   preset: FormulaPreset;
   speedFactor: number;
+  onWaveAmplitudeChange?: (amplitude: number) => void;
 };
 
 const NEON_COLORS = [
@@ -23,6 +24,7 @@ const WAVE_STEP = 2.25;
 export default function FourierVisualizer({
   preset,
   speedFactor,
+  onWaveAmplitudeChange,
 }: FourierVisualizerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -141,6 +143,12 @@ export default function FourierVisualizer({
       wave.unshift(y);
       if (wave.length > maxPoints) {
         wave.length = maxPoints;
+      }
+
+      // Normalize wave amplitude to -1 to 1 range relative to center
+      const normalizedAmplitude = (y - originY) / (height * 0.4);
+      if (onWaveAmplitudeChange) {
+        onWaveAmplitudeChange(normalizedAmplitude);
       }
 
       context.shadowBlur = 0;

@@ -13,6 +13,7 @@ export class FormulaAudioEngine {
   private oscillator: OscillatorNode | null = null;
   private filter: BiquadFilterNode | null = null;
   private volume = 0.12;
+  private baseFrequency = 440;
 
   constructor(initialVolume = 0.12) {
     this.volume = clamp(initialVolume, 0, 1);
@@ -104,6 +105,7 @@ export class FormulaAudioEngine {
       this.stop();
     }
 
+    this.baseFrequency = preset.baseFrequency;
     this.masterGain = context.createGain();
     this.masterGain.gain.setValueAtTime(0, now);
 
@@ -142,6 +144,28 @@ export class FormulaAudioEngine {
       800, // Sweep down to darker tone over 3 seconds
       now + attackTime + decayTime
     );
+  }
+
+  // Update frequency based on waveform amplitude (-1 to 1)
+  setRealtimeFrequency(normalizedAmplitude: number) {
+    if (!this.oscillator || !this.isPlaying()) {
+      return;
+    }
+    // Map -1 to 1 into frequency range: -1 = 100Hz, 0 = baseFreq, 1 = 2000Hz
+    const minFreq = 100;
+    const maxFreq = 2000;
+    const midFreq = this.baseFrequency;
+    
+    let freq: number;
+    if (normalizedAmplitude >= 0) {
+      // 0 to 1 maps to baseFreq to maxFreq
+      freq = midFreq + normalizedAmplitude * (maxFreq - midFreq);
+    } else {
+      // -1 to 0 maps to minFreq to baseFreq
+      freq = midFreq + normalizedAmplitude * (midFreq - minFreq);
+    }
+    
+    this.oscillator.frequency.setTargetAtTime(freq, this.context!.currentTime, 0.02);
   }
 
   stop() {

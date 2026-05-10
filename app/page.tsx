@@ -81,7 +81,13 @@ export default function Home() {
 
 
       <section className="flex flex-1 flex-col justify-center gap-4 py-4">
-        <FourierVisualizer preset={paramPreset} speedFactor={speedFactor} />
+        <FourierVisualizer 
+          preset={paramPreset} 
+          speedFactor={speedFactor}
+          onWaveAmplitudeChange={(amplitude) => {
+            audioEngineRef.current?.setRealtimeFrequency(amplitude);
+          }}
+        />
         <FormulaDisplay formula={paramPreset.label} name={paramPreset.name} details={`Param: ${formulaParam.toFixed(2)} · ${Math.round(tempoBpm)} BPM`} />
       </section>
 
