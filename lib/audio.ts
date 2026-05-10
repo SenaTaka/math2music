@@ -126,24 +126,17 @@ export class FormulaAudioEngine {
     oscillator.start(now);
     this.oscillator = oscillator;
 
-    // Harp-like envelope: quick attack, then dramatic decay
+    // Harp-like envelope: quick attack, sustain indefinitely (no auto-decay)
     const attackTime = 0.08;
-    const decayTime = 3.0; // Much longer decay to hear the sustain change
     this.masterGain.gain.linearRampToValueAtTime(
       this.volume,
       now + attackTime
     );
-    this.masterGain.gain.exponentialRampToValueAtTime(
-      0.001, // Decay nearly to silence
-      now + attackTime + decayTime
-    );
+    // Keep volume steady - stop() で明示的に停止するまで音を出す
+    this.masterGain.gain.setValueAtTime(this.volume, now + attackTime);
     
-    // Animate filter frequency for extra shimmer/harp effect
+    // Filter stays bright during play
     this.filter.frequency.setValueAtTime(1200, now);
-    this.filter.frequency.exponentialRampToValueAtTime(
-      800, // Sweep down to darker tone over 3 seconds
-      now + attackTime + decayTime
-    );
   }
 
   // Update frequency based on waveform amplitude (-1 to 1)
