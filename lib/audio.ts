@@ -110,8 +110,8 @@ export class FormulaAudioEngine {
     // Add lowpass filter for warmer, harp-like tone
     this.filter = context.createBiquadFilter();
     this.filter.type = "lowpass";
-    this.filter.frequency.setValueAtTime(3200, now); // Gentle high-end rolloff
-    this.filter.Q.setValueAtTime(1, now);
+    this.filter.frequency.setValueAtTime(1200, now); // More aggressive rolloff for harp effect
+    this.filter.Q.setValueAtTime(2.5, now); // Stronger resonance
     this.filter.connect(this.masterGain);
 
     this.masterGain.connect(context.destination);
@@ -124,15 +124,22 @@ export class FormulaAudioEngine {
     oscillator.start(now);
     this.oscillator = oscillator;
 
-    // Harp-like envelope: quick attack, long decay
-    const attackTime = 0.05;
-    const decayTime = 2.0; // Long sustain/decay for harp feel
+    // Harp-like envelope: quick attack, then dramatic decay
+    const attackTime = 0.08;
+    const decayTime = 3.0; // Much longer decay to hear the sustain change
     this.masterGain.gain.linearRampToValueAtTime(
       this.volume,
       now + attackTime
     );
     this.masterGain.gain.exponentialRampToValueAtTime(
-      0.01,
+      0.001, // Decay nearly to silence
+      now + attackTime + decayTime
+    );
+    
+    // Animate filter frequency for extra shimmer/harp effect
+    this.filter.frequency.setValueAtTime(1200, now);
+    this.filter.frequency.exponentialRampToValueAtTime(
+      800, // Sweep down to darker tone over 3 seconds
       now + attackTime + decayTime
     );
   }
