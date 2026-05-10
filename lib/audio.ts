@@ -12,6 +12,7 @@ export class FormulaAudioEngine {
   private masterGain: GainNode | null = null;
   private oscillator: OscillatorNode | null = null;
   private filter: BiquadFilterNode | null = null;
+  private recordingDestination: MediaStreamAudioDestinationNode | null = null;
   private volume = 0.12;
   private baseFrequency = 440;
   private minFrequency = 60; // Low end (下側)
@@ -81,6 +82,10 @@ export class FormulaAudioEngine {
     return this.oscillator !== null;
   }
 
+  getRecordingStream(): MediaStream | null {
+    return this.recordingDestination?.stream ?? null;
+  }
+
   private createPeriodicWave(
     context: AudioContext,
     preset: FormulaPreset,
@@ -126,7 +131,12 @@ export class FormulaAudioEngine {
     this.filter.Q.setValueAtTime(2.5, now); // Stronger resonance
     this.filter.connect(this.masterGain);
 
+    if (!this.recordingDestination) {
+      this.recordingDestination = context.createMediaStreamDestination();
+    }
+
     this.masterGain.connect(context.destination);
+    this.masterGain.connect(this.recordingDestination);
 
     // Main oscillator with periodic wave
     const oscillator = context.createOscillator();
@@ -212,5 +222,6 @@ export class FormulaAudioEngine {
     }
     await this.context.close();
     this.context = null;
+    this.recordingDestination = null;
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useRef } from "react";
 import { FormulaPreset } from "@/lib/presets";
 
 type FourierVisualizerProps = {
@@ -21,47 +21,52 @@ const NEON_COLORS = [
 
 const WAVE_STEP = 2.25;
 
-export default function FourierVisualizer({
-  preset,
-  speedFactor,
-  onWaveAmplitudeChange,
-}: FourierVisualizerProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const presetRef = useRef(preset);
-  const speedFactorRef = useRef(speedFactor);
-  const waveRef = useRef<number[]>([]);
-  const geometryRef = useRef({
-    width: 0,
-    height: 0,
-    originX: 0,
-    originY: 0,
-    waveStartX: 0,
-    rightPadding: 20,
-  });
+const FourierVisualizer = forwardRef<HTMLCanvasElement, FourierVisualizerProps>(
+  function FourierVisualizer(
+    { preset, speedFactor, onWaveAmplitudeChange }: FourierVisualizerProps,
+    forwardedRef,
+  ) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const animationFrameRef = useRef<number | null>(null);
+    const presetRef = useRef(preset);
+    const speedFactorRef = useRef(speedFactor);
+    const onWaveAmplitudeChangeRef = useRef(onWaveAmplitudeChange);
+    const waveRef = useRef<number[]>([]);
+    const geometryRef = useRef({
+      width: 0,
+      height: 0,
+      originX: 0,
+      originY: 0,
+      waveStartX: 0,
+      rightPadding: 20,
+    });
 
-  useEffect(() => {
-    presetRef.current = preset;
-    waveRef.current = [];
-  }, [preset]);
+    useEffect(() => {
+      presetRef.current = preset;
+      waveRef.current = [];
+    }, [preset]);
 
-  useEffect(() => {
-    speedFactorRef.current = speedFactor;
-  }, [speedFactor]);
+    useEffect(() => {
+      speedFactorRef.current = speedFactor;
+    }, [speedFactor]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
+    useEffect(() => {
+      onWaveAmplitudeChangeRef.current = onWaveAmplitudeChange;
+    }, [onWaveAmplitudeChange]);
 
-    if (!canvas || !container) {
-      return;
-    }
+    useEffect(() => {
+      const canvas = canvasRef.current;
+      const container = containerRef.current;
 
-    const context = canvas.getContext("2d");
-    if (!context) {
-      return;
-    }
+      if (!canvas || !container) {
+        return;
+      }
+
+      const context = canvas.getContext("2d");
+      if (!context) {
+        return;
+      }
 
     const resize = () => {
       const rect = container.getBoundingClientRect();
@@ -147,8 +152,8 @@ export default function FourierVisualizer({
 
       // Normalize wave amplitude to -1 to 1 range relative to center
       const normalizedAmplitude = (y - originY) / (height * 0.4);
-      if (onWaveAmplitudeChange) {
-        onWaveAmplitudeChange(normalizedAmplitude);
+      if (onWaveAmplitudeChangeRef.current) {
+        onWaveAmplitudeChangeRef.current(normalizedAmplitude);
       }
 
       context.shadowBlur = 0;
@@ -195,26 +200,41 @@ export default function FourierVisualizer({
       animationFrameRef.current = window.requestAnimationFrame(draw);
     };
 
-    resize();
-    const resizeObserver = new ResizeObserver(resize);
-    resizeObserver.observe(container);
+      resize();
+      const resizeObserver = new ResizeObserver(resize);
+      resizeObserver.observe(container);
 
-    animationFrameRef.current = window.requestAnimationFrame(draw);
+      animationFrameRef.current = window.requestAnimationFrame(draw);
 
-    return () => {
-      resizeObserver.disconnect();
-      if (animationFrameRef.current !== null) {
-        window.cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, []);
+      return () => {
+        resizeObserver.disconnect();
+        if (animationFrameRef.current !== null) {
+          window.cancelAnimationFrame(animationFrameRef.current);
+        }
+      };
+    }, []);
 
-  return (
-    <div
-      ref={containerRef}
-      className="pointer-events-none relative z-0 h-[44vh] min-h-[340px] w-full overflow-hidden rounded-3xl border border-white/10 bg-black/35"
-    >
-      <canvas ref={canvasRef} className="h-full w-full pointer-events-none" />
-    </div>
-  );
-}
+    return (
+      <div
+        ref={containerRef}
+        className="pointer-events-none relative z-0 h-[44vh] min-h-[340px] w-full overflow-hidden rounded-3xl border border-white/10 bg-black/35"
+      >
+        <canvas
+          ref={(node) => {
+            canvasRef.current = node;
+            if (typeof forwardedRef === "function") {
+              forwardedRef(node);
+              return;
+            }
+            if (forwardedRef) {
+              forwardedRef.current = node;
+            }
+          }}
+          className="h-full w-full pointer-events-none"
+        />
+      </div>
+    );
+  },
+);
+
+export default FourierVisualizer;

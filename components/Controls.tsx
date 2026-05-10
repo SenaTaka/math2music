@@ -6,9 +6,15 @@ type ControlsProps = {
   presets: FormulaPreset[];
   activePresetId: string;
   isPlaying: boolean;
+  isRecording: boolean;
+  hasRecording: boolean;
   onPresetChange: (presetId: string) => void;
   onPlay: () => void | Promise<void>;
   onStop: () => void;
+  onRecordToggle: () => void | Promise<void>;
+  onDownloadRecording: () => void;
+  onShareRecording: () => void | Promise<void>;
+  onCopyLink: () => void | Promise<void>;
   volume: number;
   onVolumeChange: (value: number) => void;
   formulaParam: number;
@@ -26,9 +32,15 @@ export default function Controls({
   presets,
   activePresetId,
   isPlaying,
+  isRecording,
+  hasRecording,
   onPresetChange,
   onPlay,
   onStop,
+  onRecordToggle,
+  onDownloadRecording,
+  onShareRecording,
+  onCopyLink,
   volume,
   onVolumeChange,
   formulaParam,
@@ -95,6 +107,48 @@ export default function Controls({
             aria-label="Volume"
           />
         </label>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            void onRecordToggle();
+          }}
+          className={`rounded-full border px-2 py-1.5 text-xs transition ${
+            isRecording
+              ? "border-red-300/70 bg-red-300/15 text-red-100"
+              : "border-white/30 bg-white/10 text-white/85 hover:bg-white/20"
+          }`}
+        >
+          {isRecording ? "Stop Rec" : "Record"}
+        </button>
+        <button
+          type="button"
+          onClick={onDownloadRecording}
+          disabled={!hasRecording}
+          className="rounded-full border border-white/30 bg-white/10 px-2 py-1.5 text-xs text-white/85 transition enabled:hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Download
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            void onShareRecording();
+          }}
+          className="rounded-full border border-white/30 bg-white/10 px-2 py-1.5 text-xs text-white/85 transition hover:bg-white/20"
+        >
+          Share
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            void onCopyLink();
+          }}
+          className="rounded-full border border-white/30 bg-white/10 px-2 py-1.5 text-xs text-white/85 transition hover:bg-white/20"
+        >
+          Copy link
+        </button>
       </div>
 
       <div className="space-y-2 rounded-xl border border-white/10 bg-black/20 p-2.5">
