@@ -1,0 +1,232 @@
+Vercelで公開できるWebアプリを作成してください。
+
+目的：
+Instagramリール風の「数学の式 → 円運動 → 波形 → 音」を可視化するWebアプリを作る。
+添付画像のように、黒背景にネオン風の数学アニメーションを表示し、数式から生成した波形を音として再生できるアプリにする。
+
+技術スタック：
+- Next.js
+- TypeScript
+- React
+- Tailwind CSS
+- Vercelデプロイ前提
+- 音生成には Web Audio API を使用
+- 外部バックエンド不要
+- DB不要
+- すべてフロントエンドのみで完結
+
+画面仕様：
+1. 全体
+- スマホ縦画面を主対象にする
+- 背景は黒
+- 中央にアニメーション領域
+- ネオン風の発光表現を使う
+- Instagramリール風の縦長レイアウト
+- 余計なメニューやログイン機能は不要
+
+2. ヘッダー表示
+画面上部に白い角丸ボックスを表示する。
+中のテキストは以下：
+
+Why is this SO satisfying?
+😂😂😂
+
+- 白背景
+- 黒文字
+- 角丸
+- 中央配置
+- 大きめのフォント
+
+3. メインアニメーション
+画面中央に以下を表示する。
+
+左側：
+- 複数の回転円を表示
+- 各円はサイン波の成分を表す
+- 円の先端を線で接続する
+- 最後の点から右側の波形へ点線を引く
+- 円は時間とともに回転する
+- 円の色はネオンブルー、紫、ピンク、黄色など
+
+右側：
+- 左の円運動から生成される波形をリアルタイムで描画する
+- 横軸と縦軸を白または薄いグレーで表示
+- 波形はネオンカラー
+- 波形には glow / blur / shadow を入れる
+- アニメーションは滑らかにする
+
+4. 数式表示
+アニメーションの下に現在の数式を表示する。
+LaTeX風の見た目にするが、MathJax等は必須ではない。
+最低限、文字列として美しく表示できればよい。
+
+表示する式の候補：
+A:
+y = Σ[n=1 to 7] 1.5 / √n · sin(nx)
+
+B:
+y = 5sin(x) - sin(5x)
+
+C:
+y = Σ[k=0 to 6] 2 / (2k + 1) · sin((2k + 1)x)
+
+D:
+y = 6Σ[k=1 to 12] 1 / (2k + 1) · sin((2k + 1)x)
+
+5. 式切り替え
+画面下部に小さなボタンを4つ配置する。
+- Smooth
+- Punch
+- Square
+- Chaos
+
+押すと数式、円運動、波形、音が切り替わる。
+ただしボタンは目立たせすぎない。
+メインは映像表現。
+
+6. 音生成
+- Web Audio APIで波形から音を生成する
+- 再生ボタンを設置する
+- iOS/Chromeの制約に対応するため、ユーザー操作後にAudioContextを開始する
+- 再生中は数式に応じた音を鳴らす
+- 停止ボタンも用意する
+- 音量スライダーを用意する
+- 初期音量は小さめにする
+
+音の仕様：
+- 各数式の sin 成分を oscillator または periodic wave として合成する
+- 基本周波数は 110Hz〜220Hz 程度
+- 音が不快にならないようにGainを抑える
+- クリックノイズを避けるため、再生・停止時はフェードイン/フェードアウトする
+
+7. アニメーション実装
+- Canvas APIで描画する
+- requestAnimationFrameを使う
+- Reactコンポーネント内でcanvasを管理する
+- 画面リサイズに対応する
+- devicePixelRatioを考慮して高解像度表示にする
+- 60fpsを目標にする
+
+8. 数式データ構造
+数式ごとに以下のようなデータを持たせる。
+
+type HarmonicTerm = {
+  frequency: number;
+  amplitude: number;
+  phase?: number;
+};
+
+type FormulaPreset = {
+  id: string;
+  name: string;
+  label: string;
+  color: string;
+  terms: HarmonicTerm[];
+};
+
+例：
+Smooth:
+terms = [
+  { frequency: 1, amplitude: 1.5 / Math.sqrt(1) },
+  { frequency: 2, amplitude: 1.5 / Math.sqrt(2) },
+  ...
+  { frequency: 7, amplitude: 1.5 / Math.sqrt(7) }
+]
+
+Punch:
+terms = [
+  { frequency: 1, amplitude: 5 },
+  { frequency: 5, amplitude: -1 }
+]
+
+Square:
+terms = [
+  { frequency: 1, amplitude: 2 / 1 },
+  { frequency: 3, amplitude: 2 / 3 },
+  { frequency: 5, amplitude: 2 / 5 },
+  ...
+  { frequency: 13, amplitude: 2 / 13 }
+]
+
+Chaos:
+terms = [
+  { frequency: 3, amplitude: 6 / 3 },
+  { frequency: 5, amplitude: 6 / 5 },
+  ...
+  { frequency: 25, amplitude: 6 / 25 }
+]
+
+9. 描画ロジック
+Canvas内で以下を描画する。
+
+- 左のエピサイクル円：
+  - 開始点を左側中央に置く
+  - 各termについて円を描く
+  - 半径 = amplitude * scale
+  - 角度 = time * frequency + phase
+  - 現在点を次の円の中心にする
+  - 最後の点のy座標を波形に渡す
+
+- 右の波形：
+  - 毎フレーム、最後の点のy値を配列の先頭に追加
+  - 配列を横方向に描画
+  - 最大長をcanvas幅に応じて制限
+  - 古い点は削除
+  - 波形は滑らかな線で描画
+  - 点線でエピサイクルの終点と波形開始点を接続
+
+10. 見た目
+- 黒背景
+- ネオン風
+- 線は細め
+- glow効果を強めに
+- 数式は大きく表示
+- スマホで見たときにSNS動画っぽく見えること
+- 余白は広め
+- UIボタンは下部に控えめに配置
+
+11. ファイル構成
+以下のような構成にする。
+
+app/
+  page.tsx
+components/
+  FourierVisualizer.tsx
+  Controls.tsx
+  FormulaDisplay.tsx
+lib/
+  presets.ts
+  audio.ts
+styles/
+  globals.css
+
+12. 実装上の注意
+- SSRでwindowやAudioContextを直接参照しない
+- CanvasとAudioはclient componentで実装する
+- "use client" を必要なファイルに付ける
+- Vercelでそのままビルドできること
+- npm run build が通ること
+- TypeScriptエラーを残さないこと
+- ESLintエラーを残さないこと
+- 画像や動画素材は使わない
+- 外部APIは使わない
+- 完全にコード生成のみで再現する
+
+13. 最低限必要な機能
+- 4種類の数式プリセット切り替え
+- Canvasアニメーション
+- エピサイクル円の描画
+- 波形描画
+- 数式表示
+- 音の再生/停止
+- 音量調整
+- スマホ対応
+- Vercelデプロイ対応
+
+14. 完成イメージ
+黒背景の縦長画面に、白い吹き出しテキスト、左に回転円、右に波形、下に数式が表示される。
+数式を切り替えると、円の動き、波形、音が変化する。
+Instagramリールに出てくる数学×音×アニメーション動画のような中毒性のある見た目にする。
+
+まずは完全に動くMVPを作成してください。
+余計な機能は追加しないでください。
