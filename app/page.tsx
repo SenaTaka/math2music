@@ -14,6 +14,8 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [formulaParam, setFormulaParam] = useState(DEFAULT_FORMULA_PARAM);
   const [tempoBpm, setTempoBpm] = useState(DEFAULT_TEMPO_BPM);
+  const [minFrequencyHz, setMinFrequencyHz] = useState(60);
+  const [maxFrequencyHz, setMaxFrequencyHz] = useState(2000);
   const audioEngineRef = useRef<FormulaAudioEngine | null>(null);
 
   const activePreset = useMemo(() => {
@@ -68,6 +70,10 @@ export default function Home() {
   }, [paramPreset, isPlaying]);
 
   useEffect(() => {
+    audioEngineRef.current?.setFrequencyRange(minFrequencyHz, maxFrequencyHz);
+  }, [minFrequencyHz, maxFrequencyHz]);
+
+  useEffect(() => {
     return () => {
       if (!audioEngineRef.current) {
         return;
@@ -107,6 +113,10 @@ export default function Home() {
         onFormulaParamChange={(v) => setFormulaParam(v)}
         tempoBpm={tempoBpm}
         onTempoBpmChange={(v) => setTempoBpm(v)}
+        minFrequencyHz={minFrequencyHz}
+        onMinFrequencyChange={(v) => setMinFrequencyHz(v)}
+        maxFrequencyHz={maxFrequencyHz}
+        onMaxFrequencyChange={(v) => setMaxFrequencyHz(v)}
         message={message}
       />
     </main>

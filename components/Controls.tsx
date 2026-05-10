@@ -15,6 +15,10 @@ type ControlsProps = {
   onFormulaParamChange: (value: number) => void;
   tempoBpm: number;
   onTempoBpmChange: (value: number) => void;
+  minFrequencyHz: number;
+  onMinFrequencyChange: (value: number) => void;
+  maxFrequencyHz: number;
+  onMaxFrequencyChange: (value: number) => void;
   message?: string;
 };
 
@@ -31,6 +35,10 @@ export default function Controls({
   onFormulaParamChange,
   tempoBpm,
   onTempoBpmChange,
+  minFrequencyHz,
+  onMinFrequencyChange,
+  maxFrequencyHz,
+  onMaxFrequencyChange,
   message,
 }: ControlsProps) {
   return (
@@ -121,6 +129,42 @@ export default function Controls({
           className="w-full accent-cyan-300"
           aria-label="Tempo BPM"
         />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1.5 rounded-xl border border-white/10 bg-black/20 p-2">
+          <label className="flex items-center justify-between text-xs text-white/75">
+            <span>↓ Low Hz</span>
+            <span>{Math.round(minFrequencyHz)}</span>
+          </label>
+          <input
+            type="range"
+            min={20}
+            max={500}
+            step={10}
+            value={minFrequencyHz}
+            onChange={(event) => onMinFrequencyChange(Number(event.currentTarget.value))}
+            className="w-full accent-blue-400"
+            aria-label="Minimum frequency"
+          />
+        </div>
+
+        <div className="space-y-1.5 rounded-xl border border-white/10 bg-black/20 p-2">
+          <label className="flex items-center justify-between text-xs text-white/75">
+            <span>↑ High Hz</span>
+            <span>{Math.round(maxFrequencyHz)}</span>
+          </label>
+          <input
+            type="range"
+            min={500}
+            max={5000}
+            step={50}
+            value={maxFrequencyHz}
+            onChange={(event) => onMaxFrequencyChange(Number(event.currentTarget.value))}
+            className="w-full accent-amber-300"
+            aria-label="Maximum frequency"
+          />
+        </div>
       </div>
 
       {message ? (

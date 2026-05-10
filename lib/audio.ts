@@ -14,9 +14,19 @@ export class FormulaAudioEngine {
   private filter: BiquadFilterNode | null = null;
   private volume = 0.12;
   private baseFrequency = 440;
+  private minFrequency = 60; // Low end (下側)
+  private maxFrequency = 2000; // High end (上側)
 
   constructor(initialVolume = 0.12) {
     this.volume = clamp(initialVolume, 0, 1);
+  }
+
+  setFrequencyRange(minHz: number, maxHz: number) {
+    this.minFrequency = clamp(minHz, 20, 5000);
+    this.maxFrequency = clamp(maxHz, 20, 5000);
+    if (this.minFrequency > this.maxFrequency) {
+      [this.minFrequency, this.maxFrequency] = [this.maxFrequency, this.minFrequency];
+    }
   }
 
   private getAudioContext(): AudioContext {
@@ -144,18 +154,19 @@ export class FormulaAudioEngine {
     if (!this.oscillator || !this.isPlaying()) {
       return;
     }
-    // Map -1 to 1 into frequency range: -1 = 100Hz, 0 = baseFreq, 1 = 2000Hz
-    const minFreq = 100;
-    const maxFreq = 2000;
+    // Map -1 to 1 into frequency range:
+    // -1 (下側/低周波) = minFrequency
+    // 0 (中心) = baseFrequency
+    // +1 (上側/高周波) = maxFrequency
     const midFreq = this.baseFrequency;
     
     let freq: number;
     if (normalizedAmplitude >= 0) {
-      // 0 to 1 maps to baseFreq to maxFreq
-      freq = midFreq + normalizedAmplitude * (maxFreq - midFreq);
+      // 0 to 1 maps to baseFreq to maxFreq (上側→高周波)
+      freq = midFreq + normalizedAmplitude * (this.maxFrequency - midFreq);
     } else {
-      // -1 to 0 maps to minFreq to baseFreq
-      freq = midFreq + normalizedAmplitude * (midFreq - minFreq);
+      // -1 to 0 maps to minFreq to baseFreq (下側→低周波)
+      freq = midFreq + normalizedAmplitude * (midFreq - this.minFrequency);
     }
     
     this.oscillator.frequency.setTargetAtTime(freq, this.context!.currentTime, 0.02);
