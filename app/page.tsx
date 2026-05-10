@@ -13,7 +13,7 @@ import {
   formulaPresets,
 } from "@/lib/presets";
 
-const RECORDING_MS = 12_000;
+const LOOP_RECORDING_MS = 6_000;
 const RECORDING_FPS = 30;
 const RECORDING_MIME_TYPES = [
   "video/webm;codecs=vp9,opus",
@@ -100,6 +100,7 @@ export default function Home() {
   );
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [loopStartTimestampMs, setLoopStartTimestampMs] = useState<number | null>(null);
   const [volume, setVolume] = useState(initialState.volume);
   const [message, setMessage] = useState("");
   const [formulaParam, setFormulaParam] = useState(initialState.formulaParam);
@@ -143,6 +144,7 @@ export default function Home() {
   const stopRecording = () => {
     const recorder = mediaRecorderRef.current;
     clearRecordingTimeout();
+    setLoopStartTimestampMs(null);
     if (!recorder) {
       setIsRecording(false);
       return;
@@ -229,12 +231,14 @@ export default function Home() {
 
     recorder.onerror = () => {
       setIsRecording(false);
+      setLoopStartTimestampMs(null);
       setMessage("Recording failed. Please retry.");
     };
 
     recorder.onstop = () => {
       clearRecordingTimeout();
       setIsRecording(false);
+      setLoopStartTimestampMs(null);
       mixedStream.getTracks().forEach((track) => track.stop());
 
       if (recordingChunksRef.current.length === 0) {
@@ -252,14 +256,15 @@ export default function Home() {
     recorder.start(250);
     setRecordingBlob(null);
     setIsRecording(true);
-    setMessage("Recording started.");
+    setLoopStartTimestampMs(performance.now());
+    setMessage("Loop recording started.");
 
     recordingTimeoutRef.current = window.setTimeout(() => {
       const currentRecorder = mediaRecorderRef.current;
       if (currentRecorder && currentRecorder.state === "recording") {
         currentRecorder.stop();
       }
-    }, RECORDING_MS);
+    }, LOOP_RECORDING_MS);
   };
 
   const handleDownloadRecording = () => {
@@ -372,9 +377,12 @@ export default function Home() {
 
   return (
     <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pb-5 pt-6 sm:max-w-lg">
-      <header className="mb-3 rounded-2xl bg-white px-4 py-3 text-center text-black shadow-[0_8px_32px_rgba(255,255,255,0.14)]">
+      <header className="mb-3 rounded-2xl bg-white px-4 py-3 text-center text-black shadow-[0_10px_38px_rgba(255,255,255,0.2)]">
         <p className="text-lg font-semibold leading-snug sm:text-xl">
-          Why is this SO satisfying?
+          This formula sounds illegal.
+        </p>
+        <p className="mt-1 text-xs font-medium tracking-wide text-black/70">
+          Watch until the end, it loops perfectly.
         </p>
       </header>
 
@@ -383,6 +391,10 @@ export default function Home() {
           ref={canvasRef}
           preset={paramPreset}
           speedFactor={speedFactor}
+          isLoopMode={isRecording}
+          loopDurationMs={LOOP_RECORDING_MS}
+          loopStartTimestampMs={loopStartTimestampMs}
+          effectBoost={isRecording ? 1.3 : 0.65}
           onWaveAmplitudeChange={(amplitude) => {
             audioEngineRef.current?.setRealtimeFrequency(amplitude);
           }}
@@ -400,6 +412,7 @@ export default function Home() {
         isPlaying={isPlaying}
         isRecording={isRecording}
         hasRecording={recordingBlob !== null}
+        loopDurationSec={LOOP_RECORDING_MS / 1000}
         onPresetChange={(presetId) => {
           setActivePresetId(presetId);
           setMessage("");

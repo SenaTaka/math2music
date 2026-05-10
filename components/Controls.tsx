@@ -8,6 +8,7 @@ type ControlsProps = {
   isPlaying: boolean;
   isRecording: boolean;
   hasRecording: boolean;
+  loopDurationSec: number;
   onPresetChange: (presetId: string) => void;
   onPlay: () => void | Promise<void>;
   onStop: () => void;
@@ -34,6 +35,7 @@ export default function Controls({
   isPlaying,
   isRecording,
   hasRecording,
+  loopDurationSec,
   onPresetChange,
   onPlay,
   onStop,
@@ -121,7 +123,7 @@ export default function Controls({
               : "border-white/30 bg-white/10 text-white/85 hover:bg-white/20"
           }`}
         >
-          {isRecording ? "Stop Rec" : "Record"}
+          {isRecording ? "Stop Rec" : "Loop Rec"}
         </button>
         <button
           type="button"
@@ -150,6 +152,10 @@ export default function Controls({
           Copy link
         </button>
       </div>
+
+      <p className="text-center text-[10px] tracking-wide text-white/55">
+        LOOP MODE · {loopDurationSec.toFixed(1)}s seamless clip
+      </p>
 
       <div className="space-y-2 rounded-xl border border-white/10 bg-black/20 p-2.5">
         <label className="flex items-center justify-between text-xs text-white/75">
