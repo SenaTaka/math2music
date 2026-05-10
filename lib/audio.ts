@@ -11,6 +11,7 @@ export class FormulaAudioEngine {
   private context: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private oscillator: OscillatorNode | null = null;
+  private filter: BiquadFilterNode | null = null;
   private volume = 0.12;
 
   constructor(initialVolume = 0.12) {
@@ -105,16 +106,35 @@ export class FormulaAudioEngine {
 
     this.masterGain = context.createGain();
     this.masterGain.gain.setValueAtTime(0, now);
+
+    // Add lowpass filter for warmer, harp-like tone
+    this.filter = context.createBiquadFilter();
+    this.filter.type = "lowpass";
+    this.filter.frequency.setValueAtTime(3200, now); // Gentle high-end rolloff
+    this.filter.Q.setValueAtTime(1, now);
+    this.filter.connect(this.masterGain);
+
     this.masterGain.connect(context.destination);
 
+    // Main oscillator with periodic wave
     const oscillator = context.createOscillator();
     oscillator.frequency.setValueAtTime(preset.baseFrequency, now);
     oscillator.setPeriodicWave(this.createPeriodicWave(context, preset));
-    oscillator.connect(this.masterGain);
+    oscillator.connect(this.filter!);
     oscillator.start(now);
     this.oscillator = oscillator;
 
-    this.masterGain.gain.linearRampToValueAtTime(this.volume, now + 0.08);
+    // Harp-like envelope: quick attack, long decay
+    const attackTime = 0.05;
+    const decayTime = 2.0; // Long sustain/decay for harp feel
+    this.masterGain.gain.linearRampToValueAtTime(
+      this.volume,
+      now + attackTime
+    );
+    this.masterGain.gain.exponentialRampToValueAtTime(
+      0.01,
+      now + attackTime + decayTime
+    );
   }
 
   stop() {
@@ -124,27 +144,30 @@ export class FormulaAudioEngine {
 
     const context = this.context;
     const now = context.currentTime;
-    const stopAt = now + 0.12;
+    const stopAt = now + 0.5; // Longer fade-out for harp sustain
 
     this.masterGain.gain.cancelScheduledValues(now);
     this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
-    this.masterGain.gain.linearRampToValueAtTime(0, stopAt);
+    this.masterGain.gain.exponentialRampToValueAtTime(0.001, stopAt);
 
     const oscillatorToStop = this.oscillator;
     if (oscillatorToStop) {
-      oscillatorToStop.stop(stopAt + 0.02);
+      oscillatorToStop.stop(stopAt + 0.05);
       oscillatorToStop.onended = () => {
         oscillatorToStop.disconnect();
       };
     }
 
     const currentMasterGain = this.masterGain;
+    const currentFilter = this.filter;
     window.setTimeout(() => {
       currentMasterGain.disconnect();
-    }, 180);
+      currentFilter?.disconnect();
+    }, 550);
 
     this.oscillator = null;
     this.masterGain = null;
+    this.filter = null;
   }
 
   async dispose() {
