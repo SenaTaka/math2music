@@ -154,19 +154,19 @@ export class FormulaAudioEngine {
     if (!this.oscillator || !this.isPlaying()) {
       return;
     }
-    // Map -1 to 1 into frequency range:
-    // -1 (下側/低周波) = minFrequency
+    // Map -1 to 1 into frequency range (REVERSED):
+    // +1 (上側) = minFrequency (低周波)
     // 0 (中心) = baseFrequency
-    // +1 (上側/高周波) = maxFrequency
+    // -1 (下側) = maxFrequency (高周波)
     const midFreq = this.baseFrequency;
     
     let freq: number;
     if (normalizedAmplitude >= 0) {
-      // 0 to 1 maps to baseFreq to maxFreq (上側→高周波)
-      freq = midFreq + normalizedAmplitude * (this.maxFrequency - midFreq);
+      // 0 to 1 maps to baseFreq to minFreq (上側→低周波)
+      freq = midFreq + normalizedAmplitude * (this.minFrequency - midFreq);
     } else {
-      // -1 to 0 maps to minFreq to baseFreq (下側→低周波)
-      freq = midFreq + normalizedAmplitude * (midFreq - this.minFrequency);
+      // -1 to 0 maps to maxFreq to baseFreq (下側→高周波)
+      freq = midFreq + normalizedAmplitude * (this.maxFrequency - midFreq);
     }
     
     this.oscillator.frequency.setTargetAtTime(freq, this.context!.currentTime, 0.02);
