@@ -106,5 +106,5 @@ xcodegen generate
 open Math2Music.xcodeproj
 ```
 
-Signing & Capabilities で Team と bundle id(`com.example.math2music` を変更)を設定し、実機で Run してください。
+bundle id(`com.senatakasawa.math2music`)と Signing Team は `project.yml` に設定済みです。実機を選んで Run してください。
 公開準備(競合分析・価格戦略・審査チェックリスト)は `docs/APP_STORE.md`、機能改善の提案リストは `docs/IMPROVEMENTS.md` を参照してください。

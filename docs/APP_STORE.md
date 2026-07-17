@@ -64,9 +64,13 @@
 - [x] `NSPhotoLibraryAddUsageDescription`(共有シートの「ビデオを保存」で必須)
 - [x] マイク・位置情報・トラッキング API 不使用
 - [x] `ITSAppUsesNonExemptEncryption: false`(輸出コンプライアンス自動回答)
-- [ ] Mac で `xcodegen generate` → 実機ビルド確認(下記)
-- [ ] bundle id を `com.example.math2music` から実 ID に変更 + Signing Team 設定
-- [ ] App Store Connect でスクリーンショット/説明文を登録
+- [x] Mac で `xcodegen generate` → Simulator ビルド+実機向けアーカイブ成功(2026-07-18)。実機での動作確認は未実施
+- [x] bundle id を `com.senatakasawa.math2music` に変更 + Signing Team(6325NASDSP)設定
+- [x] プライバシーポリシー/サポートページ作成(homepage リポジトリ、要デプロイ)
+  - サポート URL: `https://takasawadynamics.com/apps/math2music/`
+  - プライバシーポリシー URL: `https://takasawadynamics.com/apps/math2music/privacy`
+- [ ] App Store Connect でアプリ作成+スクリーンショット/説明文を登録
+- [ ] 実機で最終確認(下記の確認項目)→ Xcode からアーカイブをアップロード
 
 ## Mac でのビルド手順
 
