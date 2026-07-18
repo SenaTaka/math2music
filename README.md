@@ -107,4 +107,6 @@ open Math2Music.xcodeproj
 ```
 
 bundle id(`com.senatakasawa.math2music`)と Signing Team は `project.yml` に設定済みです。実機を選んで Run してください。
+
+Xcode Cloud でのビルドに対応済みです(`ios/ci_scripts/ci_post_clone.sh` が xcodegen 生成と `ios/Package.resolved` の配置を行います)。ワークフローは Xcode の Product > Xcode Cloud から作成してください。
 公開準備(競合分析・価格戦略・審査チェックリスト)は `docs/APP_STORE.md`、機能改善の提案リストは `docs/IMPROVEMENTS.md` を参照してください。
