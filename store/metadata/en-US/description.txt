@@ -1,0 +1,21 @@
+Move a slider, change the formula. The formula spins circles, the circles draw a wave, and the wave plays the music. Math2Music is a generative synth where mathematics becomes sound.
+
+EDIT THE FORMULA
+- Eight harmonic sliders directly control y = Σ aₙ·sin(nx), with a live formula display
+- Choose the base waveform: sine, cosine, triangle, sawtooth or square
+- Eight presets (Smooth / Punch / Square / Chaos / Saw / Organ / Bell / Pulse) plus randomize
+- Save favorites and recall them anytime
+
+PLAY IT AS MUSIC
+- The waveform drawn by rotating epicycles becomes the sound in real time
+- Scale quantization (pentatonic / major / minor) keeps everything musical
+- Fine-tune BPM, frequency range and volume; beat-synced haptics
+
+TAKE IT ANYWHERE
+- Neon epicycle visuals with four color themes
+- Export mathematically perfect seamless loop videos (3/6/12 s at 1080p/4K)
+- No watermark, no screen recording. Save or share straight from the share sheet
+
+PEACE OF MIND
+- One-time purchase. No ads, no extra charges
+- Zero data collection, no tracking, fully offline
