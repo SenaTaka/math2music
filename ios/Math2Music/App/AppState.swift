@@ -13,6 +13,9 @@ struct FavoriteFormula: Identifiable, Codable, Hashable {
     var maxFrequencyHz: Double
     var themeId: String
     var scaleId: String
+    /// Optional so favorites saved before the waveform feature still decode
+    /// (missing key → nil → sine, see `applyFavorite`).
+    var waveformId: String?
 }
 
 /// Central observable state — the port of the React state in `app/page.tsx`,
@@ -30,6 +33,9 @@ final class AppState {
         var themeId: String
         var scaleId: String
         var hapticsEnabled: Bool
+        /// Optional so settings persisted before the waveform feature still
+        /// decode (missing key → nil → sine, see `init`).
+        var waveformId: String?
     }
 
     private static let settingsKey = "math2music.settings"
@@ -51,6 +57,14 @@ final class AppState {
     }
     var activePresetId: String? {
         didSet { persist() }
+    }
+    /// Elemental shape for every additive term — a global choice, independent
+    /// of presets/favorites (applying one never changes it).
+    var baseWaveform: BaseWaveform {
+        didSet {
+            audio.parameters.waveform = baseWaveform
+            persist()
+        }
     }
 
     // MARK: Playback
@@ -115,7 +129,7 @@ final class AppState {
     }
 
     var formulaLabel: String {
-        return Formula.label(for: amplitudes)
+        return Formula.label(for: amplitudes, waveform: baseWaveform)
     }
 
     var speedFactor: Double {
@@ -139,7 +153,8 @@ final class AppState {
             maxFrequencyHz: 2000,
             themeId: NeonTheme.defaultTheme.id,
             scaleId: MusicalScale.off.rawValue,
-            hapticsEnabled: true
+            hapticsEnabled: true,
+            waveformId: BaseWaveform.sine.rawValue
         )
         if let data = UserDefaults.standard.data(forKey: Self.settingsKey),
            let stored = try? JSONDecoder().decode(PersistedSettings.self, from: data),
@@ -156,6 +171,7 @@ final class AppState {
         themeId = settings.themeId
         scale = MusicalScale(rawValue: settings.scaleId) ?? .off
         hapticsEnabled = settings.hapticsEnabled
+        baseWaveform = BaseWaveform(rawValue: settings.waveformId ?? "") ?? .sine
 
         if let data = UserDefaults.standard.data(forKey: Self.favoritesKey),
            let stored = try? JSONDecoder().decode([FavoriteFormula].self, from: data) {
@@ -166,6 +182,7 @@ final class AppState {
 
         isLoaded = true
         audio.parameters.setHarmonics(amplitudes)
+        audio.parameters.waveform = baseWaveform
         audio.setVolume(volume)
         audio.onInterruption = { [weak self] in
             guard let self else { return }
@@ -217,6 +234,7 @@ final class AppState {
         do {
             try audio.prepare()
             audio.parameters.setHarmonics(amplitudes)
+            audio.parameters.waveform = baseWaveform
             audio.setVolume(volume)
             // Seed the realtime targets at the base frequency so the note
             // starts exactly there (web start() behavior) instead of gliding
@@ -263,7 +281,8 @@ final class AppState {
             minFrequencyHz: minFrequencyHz,
             maxFrequencyHz: maxFrequencyHz,
             themeId: themeId,
-            scaleId: scale.rawValue
+            scaleId: scale.rawValue,
+            waveformId: baseWaveform.rawValue
         )
         favorites.insert(favorite, at: 0)
         persistFavorites()
@@ -278,6 +297,7 @@ final class AppState {
         maxFrequencyHz = favorite.maxFrequencyHz
         themeId = favorite.themeId
         scale = MusicalScale(rawValue: favorite.scaleId) ?? .off
+        baseWaveform = BaseWaveform(rawValue: favorite.waveformId ?? "") ?? .sine
         activePresetId = nil
         formulaGeneration += 1
     }
@@ -305,7 +325,8 @@ final class AppState {
             minFrequencyHz: minFrequencyHz,
             maxFrequencyHz: maxFrequencyHz,
             volume: volume,
-            scale: scale
+            scale: scale,
+            waveform: baseWaveform
         )
         Task.detached(priority: .userInitiated) { [weak self] in
             do {
@@ -366,7 +387,8 @@ final class AppState {
             maxFrequencyHz: maxFrequencyHz,
             themeId: themeId,
             scaleId: scale.rawValue,
-            hapticsEnabled: hapticsEnabled
+            hapticsEnabled: hapticsEnabled,
+            waveformId: baseWaveform.rawValue
         )
         if let data = try? JSONEncoder().encode(settings) {
             UserDefaults.standard.set(data, forKey: Self.settingsKey)

@@ -13,6 +13,7 @@ final class SynthParameters: @unchecked Sendable {
     private let masterVolume: ManagedAtomic<UInt64>
     private let noteOn: ManagedAtomic<Bool>
     private let harmonics: [ManagedAtomic<UInt64>]
+    private let waveformIndex: ManagedAtomic<Int>
 
     init() {
         mainFrequency = ManagedAtomic(Double(110).bitPattern)
@@ -25,6 +26,7 @@ final class SynthParameters: @unchecked Sendable {
         harmonics = (0..<Formula.harmonicCount).map { _ in
             ManagedAtomic(Double(0).bitPattern)
         }
+        waveformIndex = ManagedAtomic(0)
     }
 
     private static func read(_ atomic: ManagedAtomic<UInt64>) -> Double {
@@ -68,6 +70,22 @@ final class SynthParameters: @unchecked Sendable {
     var isNoteOn: Bool {
         get { return noteOn.load(ordering: .relaxed) }
         set { noteOn.store(newValue, ordering: .relaxed) }
+    }
+
+    /// The elemental shape (sin/cos/triangle/sawtooth/square) applied to
+    /// every additive term — read once per render buffer on the audio thread.
+    var waveform: BaseWaveform {
+        get {
+            let all = BaseWaveform.allCases
+            let index = waveformIndex.load(ordering: .relaxed)
+            guard index >= 0 && index < all.count else { return .sine }
+            return all[index]
+        }
+        set {
+            if let index = BaseWaveform.allCases.firstIndex(of: newValue) {
+                waveformIndex.store(index, ordering: .relaxed)
+            }
+        }
     }
 
     /// Upload a full amplitude set; missing entries are zero-padded.

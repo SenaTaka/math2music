@@ -1,15 +1,28 @@
 import Foundation
 
 /// Pure, allocation-free DSP core mirroring the web app's Web Audio chain
-/// (`lib/audio.ts`):
+/// (`lib/audio.ts`), tuned for musical comfort rather than 1:1 web parity:
 ///
-///   additive oscillator + 0.18·triangle sub-osc (0.5× freq)
-///     → lowpass biquad (Q 5.4 dB) → highshelf 1200 Hz
-///     → saturator (1+k)x/(1+k|x|), k = 280
+///   additive oscillator (selectable base shape) + 0.18·triangle sub-osc
+///   (0.5× freq)
+///     → lowpass biquad (Q 2.0 dB) → highshelf 1200 Hz (gentler than web)
+///     → tanh soft-clip safety ceiling (unity gain at low level, only the
+///       rare filter/shelf peak actually gets rounded off)
 ///     → equal-power pan → gain × (volume + 0.08·sin(2π·6.5·t))
 ///
+/// The original web-matching saturator was `(1+k)x/(1+k|x|)` with k = 280 —
+/// a near-brickwall limiter whose zero-signal slope is (1+k) = 281×, so it
+/// slammed almost any nonzero sample to within a hair of ±1 regardless of
+/// how quiet the passage was. That is what made every preset sound like a
+/// harsh, constantly-clipped square wave. `tanh(x)` has unity gain at zero
+/// and only compresses the genuine peaks (the additive sum is already
+/// bounded to ±1 by construction; only the resonant lowpass/highshelf stage
+/// can push a sample past that), so normal playing stays clean while big
+/// transients still can't clip or crackle.
+///
 /// No AVFoundation dependency — the same core drives the realtime
-/// AVAudioSourceNode and the offline loop-video export.
+/// AVAudioSourceNode and the offline loop-video export, so live and
+/// exported audio (and the base waveform) are always identical.
 struct FormulaSynthDSP {
     enum EnvelopeStage {
         case idle
@@ -20,8 +33,9 @@ struct FormulaSynthDSP {
     static let tremoloFrequency = 6.5
     static let tremoloDepth = 0.08
     static let subOscGain = 0.18
-    static let saturationAmount = 280.0
-    static let lowpassQDecibels = 5.4
+    /// tanh drive: 1.0 = unity gain at low level, gentle rounding near ±1.
+    static let saturationDrive = 1.1
+    static let lowpassQDecibels = 2.0
     static let shelfFrequency = 1200.0
 
     let sampleRate: Double
@@ -42,8 +56,9 @@ struct FormulaSynthDSP {
     private var lowpass = Biquad()
     private var highshelf = Biquad()
     private var lastCutoff = 2800.0
-    private var lastShelfGain = 5.5
+    private var lastShelfGain = 4.0
     private var coefficientCountdown = 0
+    private var waveform = BaseWaveform.sine
 
     private var envelope = 0.0
     private var stage = EnvelopeStage.idle
@@ -58,7 +73,7 @@ struct FormulaSynthDSP {
         subOscFrequency = SmoothedParameter(initialValue: 55, tau: 0.02, sampleRate: sampleRate)
         cutoff = SmoothedParameter(initialValue: 2800, tau: 0.04, sampleRate: sampleRate)
         pan = SmoothedParameter(initialValue: 0, tau: 0.07, sampleRate: sampleRate)
-        shelfGain = SmoothedParameter(initialValue: 5.5, tau: 0.06, sampleRate: sampleRate)
+        shelfGain = SmoothedParameter(initialValue: 4.0, tau: 0.06, sampleRate: sampleRate)
         volume = SmoothedParameter(initialValue: 0.18, tau: 0.015, sampleRate: sampleRate)
         harmonicAmps = (0..<Formula.harmonicCount).map { _ in
             SmoothedParameter(initialValue: 0, tau: 0.01, sampleRate: sampleRate)
@@ -68,7 +83,7 @@ struct FormulaSynthDSP {
         // Exponential decay reaching ~0.5% in 0.5 s (web: ramp to 0.001 over 0.5 s).
         releaseFactor = pow(0.001 / 0.2, 1.0 / (0.5 * sampleRate))
         lowpass.configureLowpass(frequency: 2800, qDecibels: Self.lowpassQDecibels, sampleRate: sampleRate)
-        highshelf.configureHighshelf(frequency: Self.shelfFrequency, gainDecibels: 5.5, sampleRate: sampleRate)
+        highshelf.configureHighshelf(frequency: Self.shelfFrequency, gainDecibels: 4.0, sampleRate: sampleRate)
     }
 
     /// Offline export: start in full sustain, skipping the attack ramp.
@@ -79,6 +94,7 @@ struct FormulaSynthDSP {
     /// Pull the latest targets from the shared parameter block.
     /// Called once per render buffer — safe on the audio thread.
     mutating func syncTargets(from parameters: SynthParameters) {
+        waveform = parameters.waveform
         frequency.target = parameters.targetMainFrequency
         subOscFrequency.target = parameters.targetSubFrequency
         cutoff.target = parameters.targetCutoff
@@ -160,7 +176,7 @@ struct FormulaSynthDSP {
             if amplitude == 0 { continue }
             let n = Double(index + 1)
             if n * f >= nyquist { continue }
-            sample += (amplitude / divisor) * sin(n * mainPhase)
+            sample += (amplitude / divisor) * waveform.shape(n * mainPhase)
         }
 
         // Sub oscillator: naive triangle, unit phase in [0, 1).
@@ -170,8 +186,10 @@ struct FormulaSynthDSP {
         x = lowpass.process(x)
         x = highshelf.process(x)
 
-        let k = Self.saturationAmount
-        x = ((1.0 + k) * x) / (1.0 + k * abs(x))
+        // Gentle safety ceiling: unity gain for normal levels, smooth
+        // rounding only as |x| approaches/exceeds 1 (see the type doc for
+        // why this replaced the old near-brickwall limiter).
+        x = tanh(x * Self.saturationDrive)
 
         switch stage {
         case .idle:
@@ -273,6 +291,9 @@ enum RealtimeMapper {
         parameters.targetSubFrequency = max(20.0, freq * 0.5)
         parameters.targetCutoff = min(max(1400.0 + abs(a) * 2200.0, 900.0), 4800.0)
         parameters.targetPan = min(max(a * 0.9, -0.95), 0.95)
-        parameters.targetShelfGain = 4.0 + abs(a) * 3.5
+        // Gentler brightness swing than the web original (was up to +7.5 dB)
+        // — the wide shelf boost combined with the old hard limiter was a
+        // major contributor to the harsh/fatiguing top end.
+        parameters.targetShelfGain = 2.5 + abs(a) * 2.5
     }
 }

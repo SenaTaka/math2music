@@ -8,7 +8,7 @@ enum Formula {
     static let amplitudeLimit = 5.0
 
     /// Human-readable formula label, e.g. "y = 2.0sin(x) + 0.7sin(3x)".
-    static func label(for amplitudes: [Double]) -> String {
+    static func label(for amplitudes: [Double], waveform: BaseWaveform) -> String {
         var parts: [String] = []
         for (index, amplitude) in amplitudes.enumerated() {
             let rounded = (amplitude * 10).rounded() / 10
@@ -17,7 +17,7 @@ enum Formula {
             let magnitude = abs(rounded)
             let coefficient = String(format: "%.1f", magnitude)
             let argument = n == 1 ? "x" : "\(n)x"
-            let term = "\(coefficient)sin(\(argument))"
+            let term = "\(coefficient)\(waveform.symbol)(\(argument))"
             if parts.isEmpty {
                 parts.append(rounded < 0 ? "−\(term)" : term)
             } else {

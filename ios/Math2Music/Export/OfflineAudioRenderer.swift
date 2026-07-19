@@ -25,6 +25,7 @@ enum OfflineAudioRenderer {
         let parameters = SynthParameters()
         parameters.setHarmonics(config.amplitudes)
         parameters.targetVolume = config.volume
+        parameters.waveform = config.waveform
         parameters.isNoteOn = true
 
         let frameRate = Double(LoopVideoExporter.frameRate)
@@ -39,7 +40,8 @@ enum OfflineAudioRenderer {
         func updateTargets(progress: Double) {
             let offset = EpicycleModel.endOffsetY(
                 amplitudes: config.amplitudes,
-                phaseTime: progress * 2.0 * Double.pi
+                phaseTime: progress * 2.0 * Double.pi,
+                waveform: config.waveform
             )
             RealtimeMapper.apply(
                 normalizedAmplitude: offset,

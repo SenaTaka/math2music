@@ -45,6 +45,7 @@ enum LoopVideoExporter {
         let maxFrequencyHz: Double
         let volume: Double
         let scale: MusicalScale
+        let waveform: BaseWaveform
     }
 
     enum ExportError: Error {
@@ -157,7 +158,8 @@ enum LoopVideoExporter {
                 theme: config.theme,
                 phaseTime: loopProgress * 2.0 * Double.pi,
                 effectBoost: 1.3,
-                loopProgress: loopProgress
+                loopProgress: loopProgress,
+                waveform: config.waveform
             )
             SceneRenderer.draw(
                 in: cg,

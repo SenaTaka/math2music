@@ -19,6 +19,9 @@ enum SceneRenderer {
         /// Non-nil enables loop mode: the waveform is computed analytically
         /// so frame 0 and frame N match exactly.
         let loopProgress: Double?
+        /// Elemental shape used to combine harmonic terms into the drawn
+        /// waveform (audio uses the same shape — see FormulaSynthDSP).
+        let waveform: BaseWaveform
     }
 
     static let waveStep = 2.25
@@ -133,19 +136,33 @@ enum SceneRenderer {
                 )
                 let offset = EpicycleModel.endOffsetY(
                     amplitudes: input.amplitudes,
-                    phaseTime: sampleProgress * 2.0 * Double.pi
+                    phaseTime: sampleProgress * 2.0 * Double.pi,
+                    waveform: input.waveform
                 )
                 wavePoints.append(originY + offset * orbitSpan)
             }
         } else {
-            waveBuffer.insert(endY, at: 0)
+            // The rotating rings stay literal circular motion (endX/endY,
+            // drawn above); the drawn wave trail instead uses the same
+            // generalized shape as the audio synth so picture and sound
+            // always agree, even when the base waveform isn't sine.
+            let sampleY = originY + EpicycleModel.endOffsetY(
+                amplitudes: input.amplitudes,
+                phaseTime: phaseTime,
+                waveform: input.waveform
+            ) * orbitSpan
+            waveBuffer.insert(sampleY, at: 0)
             if waveBuffer.count > maxPoints {
                 waveBuffer.removeLast(waveBuffer.count - maxPoints)
             }
             wavePoints = waveBuffer
         }
 
-        let normalizedAmplitude = (endY - originY) / (height * 0.4)
+        let normalizedAmplitude = EpicycleModel.endOffsetY(
+            amplitudes: input.amplitudes,
+            phaseTime: phaseTime,
+            waveform: input.waveform
+        )
 
         // --- Axes ---
         ctx.setShadow(offset: .zero, blur: 0, color: nil)

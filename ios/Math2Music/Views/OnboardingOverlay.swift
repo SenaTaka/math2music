@@ -29,9 +29,9 @@ struct OnboardingOverlay: View {
                     dismiss()
                 } label: {
                     Text("Start")
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.headline)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                        .padding(.vertical, 14)
                         .background(Capsule().fill(Color.cyan.opacity(0.5)))
                         .foregroundStyle(.white)
                 }
@@ -44,7 +44,7 @@ struct OnboardingOverlay: View {
     private func onboardingRow(icon: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(.cyan)
                 .frame(width: 26)
             Text(verbatim: text)

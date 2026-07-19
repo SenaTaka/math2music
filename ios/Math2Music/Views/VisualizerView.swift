@@ -61,7 +61,8 @@ struct VisualizerView: View {
                     theme: theme,
                     phaseTime: phaseTime,
                     effectBoost: loopProgress != nil ? 1.3 : 0.65,
-                    loopProgress: loopProgress
+                    loopProgress: loopProgress,
+                    waveform: state.baseWaveform
                 )
 
                 context.withCGContext { cg in
@@ -78,7 +79,8 @@ struct VisualizerView: View {
                 // and exported audio are identical by construction.
                 let normalizedAmplitude = EpicycleModel.endOffsetY(
                     amplitudes: amplitudes,
-                    phaseTime: phaseTime
+                    phaseTime: phaseTime,
+                    waveform: state.baseWaveform
                 )
                 state.visualizerDidRender(normalizedAmplitude: normalizedAmplitude)
             }

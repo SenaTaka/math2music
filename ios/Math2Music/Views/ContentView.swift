@@ -9,26 +9,30 @@ struct ContentView: View {
 
     var body: some View {
         GeometryReader { geo in
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 VisualizerView(state: state)
-                    .frame(height: geo.size.height * 0.37)
+                    .frame(height: geo.size.height * 0.35)
 
                 Text(verbatim: state.formulaLabel)
-                    .font(.system(.footnote, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.85))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.4)
+                    .font(.system(.title3, design: .monospaced).weight(.semibold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.5)
                     .frame(maxWidth: .infinity)
+                    .frame(minHeight: geo.size.height * 0.08)
+                    .accessibilityLabel(Text("Formula"))
+                    .accessibilityValue(Text(verbatim: state.formulaLabel))
 
                 HarmonicSlidersView(state: state)
-                    .frame(height: geo.size.height * 0.2)
+                    .frame(height: geo.size.height * 0.19)
 
                 ControlsView(state: state)
 
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 14)
-            .padding(.top, 6)
+            .padding(.top, 4)
         }
         .background(
             LinearGradient(

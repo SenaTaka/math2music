@@ -62,15 +62,18 @@ enum EpicycleModel {
 
     /// Vertical endpoint offset from the origin in units of `orbitSpan`.
     /// Used by the offline audio pass to reproduce the visual → audio
-    /// coupling analytically.
-    static func endOffsetY(amplitudes: [Double], phaseTime: Double) -> Double {
+    /// coupling analytically, and by the live/loop wave trace so the drawn
+    /// waveform always matches the selected base waveform (the rotating
+    /// epicycle rings themselves stay literal circular motion — only the
+    /// composite waveform value changes with the selected shape).
+    static func endOffsetY(amplitudes: [Double], phaseTime: Double, waveform: BaseWaveform) -> Double {
         let total = totalAmplitude(amplitudes)
         var offset = 0.0
         for (index, amplitude) in amplitudes.enumerated() {
             guard amplitude != 0 else { continue }
             let n = Double(index + 1)
             let angle = phaseTime * n + (amplitude < 0 ? Double.pi : 0)
-            offset += (abs(amplitude) / total) * sin(angle)
+            offset += (abs(amplitude) / total) * waveform.shape(angle)
         }
         return offset
     }

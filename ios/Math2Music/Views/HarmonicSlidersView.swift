@@ -57,10 +57,24 @@ struct VerticalHarmonicSlider: View {
                             value = (next * 10).rounded() / 10
                         }
                 )
+                .accessibilityElement()
+                .accessibilityLabel(Text("Harmonic \(label)"))
+                .accessibilityValue(Text(verbatim: String(format: "%.1f", value)))
+                .accessibilityAdjustableAction { direction in
+                    switch direction {
+                    case .increment:
+                        value = min(value + 0.5, Formula.amplitudeLimit)
+                    case .decrement:
+                        value = max(value - 0.5, -Formula.amplitudeLimit)
+                    default:
+                        break
+                    }
+                }
             }
             Text(verbatim: label)
-                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                .font(.system(.caption2, design: .monospaced).weight(.semibold))
                 .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
         }
     }
 }
