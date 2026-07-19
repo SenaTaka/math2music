@@ -39,3 +39,28 @@ targets:
         UIUserInterfaceStyle: Dark
         NSPhotoLibraryAddUsageDescription: "生成したループ動画を写真ライブラリに保存するために使用します。 / Used to save generated loop videos to your photo library."
         ITSAppUsesNonExemptEncryption: false
+  Math2MusicUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - Math2MusicUITests
+    dependencies:
+      - target: Math2Music
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 6325NASDSP
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Math2Music:
+    build:
+      targets:
+        Math2Music: all
+        Math2MusicUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - Math2MusicUITests

@@ -14,3 +14,8 @@
 - 基底波形セレクタ追加(sin/cos/tri/saw/square)— DSP・描画・書き出し3系統一致、お気に入り後方互換
 - HIG: セマンティックフォント化、主要ボタン44pt、VoiceOver対応。SEで非スクロール維持
 - 音の主観評価(実機リスニング)は未実施 → ユーザー確認待ち
+## 2026/07/19 (ASC 反映 — 提出可能状態まで)
+- API 反映: 名前/サブタイトル/プラポリURL/カテゴリ(MUSIC/ENT)/年齢4+/説明/キーワード/プロモ/著作権/審査連絡先/価格¥600(JPN)/配信175地域
+- ビルド 1.0(1) を altool で直接アップロード(キーは ~/.private_keys に symlink 要)→ VALID → バージョンに紐付け
+- スクショ: builder が XCUITest 駆動で ja/en 各5枚撮影(1290×2796)→ store_frame 加工 → asc_upload_screenshots.py で ASC 反映
+- store/ 一式 + UITest ターゲットをコミット。残る人間作業: App Privacy(データ収集なし)設定と提出ボタンのみ
