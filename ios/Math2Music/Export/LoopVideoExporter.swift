@@ -115,22 +115,33 @@ enum LoopVideoExporter {
         progress(0.15)
 
         // --- Deterministic video frames ---
+        // Each frame is a pure function of its index (loop-mode visuals don't
+        // carry state between frames — `waveBuffer` below is unused), so
+        // frames can be rendered concurrently. `adaptor.append` itself must
+        // still happen strictly in presentation-time order, so rendering
+        // runs on a bounded pool of concurrent tasks while a single
+        // in-order drain loop does the appending. Concurrency is capped at
+        // the core count (and a handful of in-flight frames beyond that from
+        // completed-but-not-yet-appended buffers) to bound memory — a 4K
+        // BGRA frame is ~33MB.
         let totalFrames = max(1, Int(config.duration * Double(frameRate)))
-        var unusedWaveBuffer: [Double] = []
-        for frame in 0..<totalFrames {
-            while !videoInput.isReadyForMoreMediaData {
-                try await Task.sleep(nanoseconds: 4_000_000)
-            }
+        let concurrency = max(1, min(ProcessInfo.processInfo.activeProcessorCount, 6))
+        let poolLock = NSLock()
+
+        func renderFrame(_ frame: Int) throws -> CVPixelBuffer {
             guard let pool = adaptor.pixelBufferPool else {
                 throw ExportError.pixelBufferUnavailable
             }
+            poolLock.lock()
             var pixelBufferOut: CVPixelBuffer?
             CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, pool, &pixelBufferOut)
+            poolLock.unlock()
             guard let pixelBuffer = pixelBufferOut else {
                 throw ExportError.pixelBufferUnavailable
             }
 
             CVPixelBufferLockBaseAddress(pixelBuffer, [])
+            defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
             guard let base = CVPixelBufferGetBaseAddress(pixelBuffer),
                   let cg = CGContext(
                       data: base,
@@ -143,7 +154,6 @@ enum LoopVideoExporter {
                           | CGBitmapInfo.byteOrder32Little.rawValue
                   )
             else {
-                CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
                 throw ExportError.renderContextUnavailable
             }
 
@@ -161,19 +171,53 @@ enum LoopVideoExporter {
                 loopProgress: loopProgress,
                 waveform: config.waveform
             )
+            var unusedWaveBuffer: [Double] = []
             SceneRenderer.draw(
                 in: cg,
                 size: config.size,
                 input: input,
                 waveBuffer: &unusedWaveBuffer
             )
-            CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
+            return pixelBuffer
+        }
 
-            let time = CMTime(value: CMTimeValue(frame), timescale: CMTimeScale(frameRate))
-            if !adaptor.append(pixelBuffer, withPresentationTime: time) {
-                throw writer.error ?? ExportError.appendFailed
+        try await withThrowingTaskGroup(of: (Int, CVPixelBuffer).self) { group in
+            var nextToSubmit = 0
+            var nextToAppend = 0
+            var pending: [Int: CVPixelBuffer] = [:]
+
+            // One new render is submitted per completed render, so in-flight
+            // renders stay capped at `concurrency` and `pending` (buffers
+            // waiting for an earlier frame to finish) stays below it too —
+            // total in-memory frames never exceed 2x the core count.
+            func submitNext() {
+                guard nextToSubmit < totalFrames else { return }
+                let frame = nextToSubmit
+                nextToSubmit += 1
+                group.addTask { (frame, try renderFrame(frame)) }
             }
-            progress(0.15 + 0.8 * Double(frame + 1) / Double(totalFrames))
+
+            for _ in 0..<min(concurrency, totalFrames) {
+                submitNext()
+            }
+
+            while nextToAppend < totalFrames {
+                let (frameIndex, buffer) = try await group.next()!
+                pending[frameIndex] = buffer
+                submitNext()
+
+                while let nextBuffer = pending.removeValue(forKey: nextToAppend) {
+                    while !videoInput.isReadyForMoreMediaData {
+                        try await Task.sleep(nanoseconds: 4_000_000)
+                    }
+                    let time = CMTime(value: CMTimeValue(nextToAppend), timescale: CMTimeScale(frameRate))
+                    if !adaptor.append(nextBuffer, withPresentationTime: time) {
+                        throw writer.error ?? ExportError.appendFailed
+                    }
+                    nextToAppend += 1
+                    progress(0.15 + 0.8 * Double(nextToAppend) / Double(totalFrames))
+                }
+            }
         }
         videoInput.markAsFinished()
 

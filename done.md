@@ -24,3 +24,9 @@
 - スクショ 04(ja/en)を store_frame.swift で新キャプションに再合成(「つなぎ目のないループ動画を4Kで」/ "Seamless loops, exported in 4K")
 - store_lint PASS 後、asc_update_metadata.py + asc_upload_screenshots.py で ASC 反映(提出はしていない)
 - 競合ページ実査(Vibely/Fourier Series Visualiser)→ 機能改善アイデア 5 件を docs/APP_STORE.md に記録(筆頭: 9:16 縦動画書き出し = Spotify Canvas/Reels 用途)
+## 2026/07/20 (書き出し高速化 — 指揮官直営)
+- LoopVideoExporter: フレーム描画を有界並列化(TaskGroup、同時=コア数、append は順序維持)。出力は決定的に同一
+- SceneRenderer のグロー安価化(レイヤーストローク近似)は3案計測の結果すべて見送り→シャドウ実装に完全復帰(3層=バンディング/8層丸ジョイン=4K 283s と逆効果)
+- 計測(シミュレータ Release, 6s): before 直列 1080p 15.7s/4K 84s、並列のみ 1080p 15.3s/4K 110s、エンコード単体プローブ 4K 31.6s → シミュレータはソフトウェア H.264 が CPU を食い、並列描画と競合して逆効果に見える(実機は HW エンコードで競合なし)
+- ExportBenchmark.swift(EXPORT_BENCH=1 / EXPORT_BENCH_APPEND=1)を恒久ハーネスとして追加
+- 実機計測は iPhone 未接続(ロック中)で未実施 → 実機で要確認
