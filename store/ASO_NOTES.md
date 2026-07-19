@@ -16,5 +16,17 @@
 1. メイン画面(再生中・Neon Cyan)— 「数式が音楽になる」/ "Math becomes music"
 2. 倍音スライダー操作 — 「スライダー8本で自分の数式を作る」/ "Shape your own formula"
 3. スケール選択 — 「動かすだけで、ちゃんと音楽になる」/ "Always in key"
-4. 書き出しシート — 「完璧ループを 4K で書き出し」/ "Export perfect 4K loops"
+4. 書き出しシート — 「つなぎ目のないループ動画を4Kで」/ "Seamless loops, exported in 4K"(2026-07-20 変更)
 5. 別テーマ(Magenta Pop)— 「気分で選べる4つのネオン」/ "Four neon themes"
+
+## 2026-07-20 「AI 感」除去+キーワード見直し(ユーザー指摘対応、ASC 反映済み)
+- 指摘: 説明・スクショの文言が AI 生成っぽい。「完璧ループ」が不自然。
+- 書き直し方針(今後もこの規律で書く):
+  - 「AがBを描き、BがCを描き…」の連鎖レトリック、「新感覚」「〜を奏でる」「数学的に完璧」「安心して使える」型の宣伝語を避ける
+  - 動作の事実を です・ます で淡々と書く(「適当に動かしても音を外しません」等)
+  - 「完璧ループ」→「つなぎ目のない(ループ)」/ en "mathematically perfect" → "no visible seam"
+- keywords 変更(理由付き):
+  - ja: エピサイクル→動画素材(検索ボリュームほぼゼロの専門語を、ループ素材を探す実需要語に)/ 理系→音遊び / 音→リズム(初回設計時から実ファイルは リズム 採用)
+  - en: stem→oscilloscope(oscilloscope music はニッチだが実在するコミュニティ語。epicycle は 3Blue1Brown 圏の検索があるため維持)
+- 競合ページ確認(2026-07-20): Fourier Series Visualiser / Epicycles は ja 未ローカライズ → 日本語検索はほぼ無風。Vibely は実績数字+用途(TikTok/Reels/Spotify Canvas)で訴求 → 機能改善アイデアは docs/APP_STORE.md に記録。
+- en promotional_text の "watermark-free" は store_lint が「free」を価格表現として検出 → "with no watermark" に言い換え(以後も free を含む複合語に注意)。

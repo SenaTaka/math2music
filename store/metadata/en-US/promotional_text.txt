@@ -1,1 +1,1 @@
-A formula draws circles, the circles draw a wave, and the wave becomes sound. Export perfect seamless loops and share them.
+Drag sliders to reshape a Fourier series and hear it change instantly. Export seamless loops with no watermark, up to 4K, and share them anywhere.

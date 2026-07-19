@@ -1,1 +1,1 @@
-fourier,visualizer,epicycle,waveform,generative,sound,wave,educational,sine,stem
+fourier,visualizer,epicycle,waveform,generative,oscilloscope,sine,wave,sound,educational

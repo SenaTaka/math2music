@@ -19,3 +19,8 @@
 - ビルド 1.0(1) を altool で直接アップロード(キーは ~/.private_keys に symlink 要)→ VALID → バージョンに紐付け
 - スクショ: builder が XCUITest 駆動で ja/en 各5枚撮影(1290×2796)→ store_frame 加工 → asc_upload_screenshots.py で ASC 反映
 - store/ 一式 + UITest ターゲットをコミット。残る人間作業: App Privacy(データ収集なし)設定と提出ボタンのみ
+## 2026/07/20 (ストア文言の AI 感除去+ASO 見直し)
+- ユーザー指摘「完璧ループ等が AI っぽい」→ ja/en の説明文・プロモ文・キーワードを書き直し(規律は store/ASO_NOTES.md 2026-07-20 参照)
+- スクショ 04(ja/en)を store_frame.swift で新キャプションに再合成(「つなぎ目のないループ動画を4Kで」/ "Seamless loops, exported in 4K")
+- store_lint PASS 後、asc_update_metadata.py + asc_upload_screenshots.py で ASC 反映(提出はしていない)
+- 競合ページ実査(Vibely/Fourier Series Visualiser)→ 機能改善アイデア 5 件を docs/APP_STORE.md に記録(筆頭: 9:16 縦動画書き出し = Spotify Canvas/Reels 用途)
